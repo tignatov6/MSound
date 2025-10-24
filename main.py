@@ -4,43 +4,64 @@ from kivy.uix.button import Button
 from kivy.uix.scrollview import ScrollView
 from kivy.core.window import Window
 from kivy.uix.boxlayout import BoxLayout
+from sound_class import Sound
+
 class MSoundApp(App):
+    sounds = [Sound('xd','/xd.mp3'),Sound('ахах','/ахах.mp3')]
     def build(self):
-        root = BoxLayout(orientation='vertical',padding=8,spacing=8)
-        hl = BoxLayout(spacing=8)
+        root = BoxLayout(orientation='vertical', padding=8, spacing=8)
+        
+        hl = BoxLayout(spacing=8, size_hint_y=None, height=40)
         settings_button = Button(text='settings', background_color=[0.1, 0, 0.7, 1])
-        settings_button.bind(on_press=self.change_buttons) # Привязка события
+        settings_button.bind(on_press=self.change_buttons)
         hl.add_widget(settings_button)
         root.add_widget(hl)
-        #root.add_widget(Button(text='add sound',background_color=[0.1, 0.7, 0, 1]))
-        self.layout = GridLayout(cols=2, spacing=5, size_hint_y=None,size_hint_x=None,size=(Window.width, Window.height))
-        # Make sure the height is such that there is something to scroll.
+        
+        self.layout = GridLayout(cols=2, spacing=5, size_hint_y=None, size_hint_x=1)
         self.layout.bind(minimum_height=self.layout.setter('height'))
-        self.layout.add_widget(Button(text='add sound',background_color=[0.1, 0.7, 0, 1]))
-        for i in range(100):
-            btn = Button(text=str(i), size_hint_y=None, height=40)
-            self.layout.add_widget(btn)
-        scrollview = ScrollView(size_hint=(None, None), size=(Window.width, Window.height*0.85))
+        self.layout.bind(width=self.update_button_heights)
+        
+        self.create_initial_buttons()
+        
+        scrollview = ScrollView(size_hint=(1, 1))
         scrollview.add_widget(self.layout)
         root.add_widget(scrollview)
-      
+
+        self.change_buttons(0)
+        
         return root
-   
+
+    def create_initial_buttons(self):
+        # Use Window.width for initial creation as layout width is not set yet.
+        button_width = (Window.width - 5) / 2
+        self.layout.add_widget(Button(text='add sound', background_color=[0.1, 0.7, 0, 1], size_hint_y=None, height=button_width))
+        for i in range(100):
+            btn = Button(text=str(i), size_hint_y=None, height=button_width)
+            self.layout.add_widget(btn)
+
+    def update_button_heights(self, instance, width):
+        button_width = (width - 5) / 2
+        if button_width <= 0:
+            return
+        for btn in self.layout.children:
+            btn.height = button_width
+
     def change_buttons(self, instance):
         """
         Эта функция вызывается при нажатии на кнопку "settings".
         Она очищает все кнопки и добавляет новые с буквами.
         """
-        # 1. Очищаем все старые виджеты (кнопки) из self.layout
         self.layout.clear_widgets()
         
-        # 2. Снова добавляем кнопку "add sound", так как она тоже удалилась
-        self.layout.add_widget(Button(text='add sound', background_color=[0.1, 0.7, 0, 1], size_hint_y=30, height=40))
+        # Use layout.width as it's already part of the widget tree and has a width
+        button_width = (self.layout.width - 5) / 2
+        if button_width <= 0:
+            return
+
+        self.layout.add_widget(Button(text='add sound', background_color=[0.1, 0.7, 0, 1], size_hint_y=None, height=button_width))
         
-        # 3. Добавляем новые кнопки с буквами
-        letters = ['a', 'b', 'c', 'd', 'e', 'f']
-        for letter in letters:
-            btn = Button(text=letter, size_hint_y=30, height=40)
+        for sound in self.sounds:
+            btn = Button(text=sound.name, size_hint_y=None, height=button_width)
             self.layout.add_widget(btn)
 
 app = MSoundApp()

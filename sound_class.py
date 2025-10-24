@@ -1,7 +1,7 @@
 import json
 
 class Sound():
-    def __init__(self,name,filepath,tags):
+    def __init__(self,name,filepath,tags=''):
         self.name = name    # 'big fart in church'
         self.filepath = filepath    # 'C:\big_fart_in_church'
         self.tags = tags # '[fun, fart, xd]'
