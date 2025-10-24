@@ -1,10 +1,13 @@
 import json
+from kivy.core.audio import SoundLoader
 
 class Sound():
     def __init__(self,name,filepath,tags=''):
         self.name = name    # 'big fart in church'
         self.filepath = filepath    # 'C:\big_fart_in_church'
         self.tags = tags # '[fun, fart, xd]'
+        self.sound = None
+        self.load()
 
     def saveToStr(self):
         my_dict = {
@@ -21,6 +24,12 @@ class Sound():
     
     def __str__(self):
         return self.saveToStr()
+    
+    def load(self):
+        self.sound = SoundLoader.load(self.filepath)
+    
+    def play(self,instance):
+        self.sound.play()
     
 
 if __name__ == "__main__":
