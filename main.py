@@ -7,16 +7,21 @@ from kivy.uix.boxlayout import BoxLayout
 from sound_class import Sound
 from plyer import filechooser
 from kivy.properties import ObjectProperty
+from kivy.core.window import Window
+from save_manager import *
 import os
+
+Window.clearcolor = (0,0,0,0)
 
 SOUND_DIR = "sounds"
 
 class MSoundApp(App):
     sounds = []
-    print(os.listdir(SOUND_DIR))
-    for name in os.listdir(SOUND_DIR):
-        name_without_ext, extension = os.path.splitext(name)
-        sounds.append(Sound(name_without_ext,os.path.join(SOUND_DIR,name)))
+    sounds = load_sounds()
+    #print(os.listdir(SOUND_DIR))
+    # for name in os.listdir(SOUND_DIR):
+    #     name_without_ext, extension = os.path.splitext(name)
+    #     sounds.append(Sound(name_without_ext,os.path.join(SOUND_DIR,name)))
     def build(self):
         root = BoxLayout(orientation='vertical', padding=8, spacing=8)
         
@@ -37,7 +42,7 @@ class MSoundApp(App):
         root.add_widget(scrollview)
 
         self.change_buttons(0)
-        
+
         return root
 
     def create_initial_buttons(self):
@@ -76,6 +81,7 @@ class MSoundApp(App):
             btn = Button(text=sound.name, size_hint_y=None, height=button_width)
             self.layout.add_widget(btn)
             btn.bind(on_press=sound.play)
+            btn.bind(on_press=self.stop_all_sounds)
 
     def add_sound(self, instance):
         """
@@ -96,13 +102,19 @@ class MSoundApp(App):
                 print(f'Выбран файл: {selected_file}')
                 self.sounds.append(Sound(os.path.basename(selected_file),selected_file))
                 self.change_buttons(0)
+                save_sounds(sounds=self.sounds)
                 # Здесь можно добавить логику для работы со звуковым файлом
             else:
                 self.selected_label.text = 'Выбор отменён'
                 print('Файл не выбран.')
 
+
         except Exception as e:
             print(f'Ошибка: {e}')
+
+    def stop_all_sounds(self, instance=None):
+        for sound in self.sounds:
+            sound.stop()
 
 app = MSoundApp()
 app.run()

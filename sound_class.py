@@ -28,8 +28,11 @@ class Sound():
     def load(self):
         self.sound = SoundLoader.load(self.filepath)
     
-    def play(self,instance):
+    def play(self,instance=None):
         self.sound.play()
+    
+    def stop(self,instance=None):
+        self.sound.stop()
     
 
 if __name__ == "__main__":
