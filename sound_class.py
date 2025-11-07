@@ -2,11 +2,12 @@ import json
 from kivy.core.audio import SoundLoader
 
 class Sound():
-    def __init__(self,name,filepath,tags=''):
+    def __init__(self,name,filepath,tags='',pos=0):
         self.name = name    # 'big fart in church'
         self.filepath = filepath    # 'C:\big_fart_in_church'
         self.tags = tags # '[fun, fart, xd]'
         self.sound = None
+        self.pos = pos
         self.load()
 
     def saveToStr(self):
@@ -14,13 +15,14 @@ class Sound():
             "name": self.name,
             "filepath": self.filepath,
             "tags": self.tags,
+            "pos": self.pos
             }
         return json.dumps(my_dict)
     
     @classmethod
     def loadFromStr(cls,json_str):
         my_dict = json.loads(json_str)  
-        return Sound(my_dict["name"],my_dict["filepath"],my_dict["tags"])
+        return Sound(my_dict["name"],my_dict["filepath"],my_dict["tags"],my_dict["pos"])
     
     def __str__(self):
         return self.saveToStr()

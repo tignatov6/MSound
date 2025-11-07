@@ -8,16 +8,37 @@ from sound_class import Sound
 from plyer import filechooser
 from kivy.properties import ObjectProperty
 from kivy.core.window import Window
-from save_manager import *
+import save_manager
 import os
 
 Window.clearcolor = (0,0,0,0)
 
 SOUND_DIR = "sounds"
 
+def sort_by_attr(objects_list, attribute, ascending=True):
+    """
+    Сортирует список объектов по указанному атрибуту.
+    
+    Аргументы:
+        objects_list -- список экземпляров класса
+        attribute    -- имя атрибута (строка), по которому сортировать
+        ascending    -- True: по возрастанию, False: по убыванию
+    
+    Возвращает:
+        Новый отсортированный список
+    """
+    return sorted(objects_list, key=lambda obj: getattr(obj, attribute), reverse=not ascending)
+
+class Gutton(Button):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.sound = None
+
+    def on_press(self):
+
 class MSoundApp(App):
     sounds = []
-    sounds = load_sounds()
+    sounds = save_manager.load_sounds()
     #print(os.listdir(SOUND_DIR))
     # for name in os.listdir(SOUND_DIR):
     #     name_without_ext, extension = os.path.splitext(name)
@@ -41,7 +62,7 @@ class MSoundApp(App):
         scrollview.add_widget(self.layout)
         root.add_widget(scrollview)
 
-        self.change_buttons(0)
+        self.change_buttons()
 
         return root
 
@@ -61,7 +82,7 @@ class MSoundApp(App):
         for btn in self.layout.children:
             btn.height = button_width
 
-    def change_buttons(self, instance):
+    def change_buttons(self, instance=None):
         """
         Эта функция вызывается при нажатии на кнопку "settings".
         Она очищает все кнопки и добавляет новые с буквами.
@@ -77,33 +98,39 @@ class MSoundApp(App):
         addsoundbtn.bind(on_press=self.add_sound)
         self.layout.add_widget(addsoundbtn)
         
+        print(self.sounds)
+        self.sounds = sort_by_attr(self.sounds,'pos')
+        print(self.sounds)
+
         for sound in self.sounds:
             btn = Button(text=sound.name, size_hint_y=None, height=button_width)
             self.layout.add_widget(btn)
-            btn.bind(on_press=sound.play)
             btn.bind(on_press=self.stop_all_sounds)
+            btn.bind(on_press=sound.play)
 
     def add_sound(self, instance):
         """
         Метод, вызывающий системный диалог выбора файла.
         """
         try:
-            path = filechooser.open_file(
+            paths = filechooser.open_file(
                 title='Выберите звуковой файл',
                 filters=[
                     ('Все файлы', '*')
                 ],
-                multiple=False # Запрещает выбор нескольких файлов
+                multiple=True # Запрещает выбор нескольких файлов
             )
 
-            if path:
-                # Результат — это список, даже если выбран один файл
-                selected_file = path[0]
-                print(f'Выбран файл: {selected_file}')
-                self.sounds.append(Sound(os.path.basename(selected_file),selected_file))
-                self.change_buttons(0)
-                save_sounds(sounds=self.sounds)
-                # Здесь можно добавить логику для работы со звуковым файлом
+            if paths:
+                for path in paths:
+                    # Результат — это список, даже если выбран один файл
+                    selected_file = path
+                    print(f'Выбран файл: {selected_file}')
+                    selected_file = save_manager.copy_sound(selected_file, 'sounds')
+                    self.sounds.append(Sound(os.path.basename(selected_file),selected_file,pos=len(self.sounds)))
+                    self.change_buttons()
+                    save_manager.save_sounds(sounds=self.sounds)
+                    # Здесь можно добавить логику для работы со звуковым файлом
             else:
                 self.selected_label.text = 'Выбор отменён'
                 print('Файл не выбран.')
