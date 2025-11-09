@@ -1,5 +1,49 @@
 import json
 from kivy.core.audio import SoundLoader
+from kivy.resources import resource_find
+from kivy.logger import Logger
+
+class CustomSoundLoader(SoundLoader):
+    @staticmethod
+    def load(filename):
+        '''Load a sound, and return a Sound() instance.'''
+        # file_path = filename
+        rfn = resource_find(filename)
+        if rfn is not None:
+            filename = rfn
+        ext = filename.split('.')[-1].lower()
+        if '?' in ext:
+            ext = ext.split('?')[0]
+        for classobj in SoundLoader._classes:
+            if ext in classobj.extensions():
+                return classobj(source=filename)
+        #Logger.warning('Audio: Unable to find a loader for <%s>' %
+        #               filename)
+        
+        # video = VideoFileClip(file_path)
+        # #print(video.duration)
+        # audio = video.audio
+        # base_dir = os.path.dirname(os.path.abspath(__file__))
+        # audio_dir = os.path.join(base_dir,'sounds','temp')
+        # audio_file = os.path.join(audio_dir,'temp.mp3')
+        # os.makedirs(os.path.dirname(audio_dir), exist_ok=True)
+        
+        # # Сохранение аудио в новый файл (например, в формате mp3)
+        # audio.write_audiofile(audio_file)
+
+        # rfn = resource_find(audio_file)
+        # if rfn is not None:
+        #     filename = rfn
+        # ext = filename.split('.')[-1].lower()
+        # if '?' in ext:
+        #     ext = ext.split('?')[0]
+        # for classobj in SoundLoader._classes:
+        #     if ext in classobj.extensions():
+        #         return classobj(source=filename)
+        Logger.warning('Audio: Unable to find a loader for <%s>' %
+                       filename)
+
+        return None
 
 class Sound():
     def __init__(self,name,filepath,tags='',pos=0):
@@ -28,13 +72,22 @@ class Sound():
         return self.saveToStr()
     
     def load(self):
-        self.sound = SoundLoader.load(self.filepath)
-    
+        self.sound = CustomSoundLoader.load(self.filepath)
+        
+    def unload(self):
+        if self.sound:
+            self.sound.unload()
+
     def play(self,instance=None):
-        self.sound.play()
+        if self.sound:
+            self.sound.play()
     
     def stop(self,instance=None):
-        self.sound.stop()
+        if self.sound:
+            self.sound.stop()
+
+    def __del__(self):
+        self.unload()
     
 
 if __name__ == "__main__":

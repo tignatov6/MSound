@@ -9,6 +9,7 @@ from plyer import filechooser
 from kivy.properties import ObjectProperty
 from kivy.core.window import Window
 import save_manager
+import time
 import os
 
 Window.clearcolor = (0,0,0,0)
@@ -33,8 +34,30 @@ class Gutton(Button):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.sound = None
+        self.last_press = None
+        self.hold_time = 2
+        self.stop_all_sounds = None
+        self.remove_sound_from_sounds = None
 
     def on_press(self):
+        try:
+            self.last_press = time.time()
+            self.stop_all_sounds()
+        except Exception as e:
+            print(f'Ошибка: {e}')
+        
+    def on_release(self):
+        #try:
+            hold_time = time.time() - self.last_press
+            if hold_time >= self.hold_time:
+                self.stop_all_sounds()
+                self.remove_sound_from_sounds(self.sound)
+                
+            else:
+                self.sound.play()
+        # except Exception as e:
+        #     print(f'Ошибка: {e}')
+
 
 class MSoundApp(App):
     sounds = []
@@ -83,10 +106,6 @@ class MSoundApp(App):
             btn.height = button_width
 
     def change_buttons(self, instance=None):
-        """
-        Эта функция вызывается при нажатии на кнопку "settings".
-        Она очищает все кнопки и добавляет новые с буквами.
-        """
         self.layout.clear_widgets()
         
         # Use layout.width as it's already part of the widget tree and has a width
@@ -98,21 +117,23 @@ class MSoundApp(App):
         addsoundbtn.bind(on_press=self.add_sound)
         self.layout.add_widget(addsoundbtn)
         
-        print(self.sounds)
+        print('Unsorted:',self.sounds)
         self.sounds = sort_by_attr(self.sounds,'pos')
-        print(self.sounds)
+        print('Sorted:',self.sounds)
 
         for sound in self.sounds:
-            btn = Button(text=sound.name, size_hint_y=None, height=button_width)
+            btn = Gutton(text=sound.name, size_hint_y=None, height=button_width)
             self.layout.add_widget(btn)
-            btn.bind(on_press=self.stop_all_sounds)
-            btn.bind(on_press=sound.play)
+            btn.sound = sound
+            btn.stop_all_sounds = self.stop_all_sounds
+            btn.remove_sound_from_sounds = self.remove_sound_from_sounds
 
     def add_sound(self, instance):
         """
         Метод, вызывающий системный диалог выбора файла.
         """
         try:
+            self.stop_all_sounds()
             paths = filechooser.open_file(
                 title='Выберите звуковой файл',
                 filters=[
@@ -127,7 +148,12 @@ class MSoundApp(App):
                     selected_file = path
                     print(f'Выбран файл: {selected_file}')
                     selected_file = save_manager.copy_sound(selected_file, 'sounds')
-                    self.sounds.append(Sound(os.path.basename(selected_file),selected_file,pos=len(self.sounds)))
+                    sound = Sound(os.path.basename(selected_file),selected_file,pos=len(self.sounds)+1)
+                    for _sound1 in self.sounds:
+                        if _sound1.name == sound.name and _sound1.filepath == sound.filepath:
+                            self.sounds.remove(_sound1)
+                    sound = Sound(os.path.basename(selected_file),selected_file,pos=len(self.sounds)+1)
+                    self.sounds.append(sound)
                     self.change_buttons()
                     save_manager.save_sounds(sounds=self.sounds)
                     # Здесь можно добавить логику для работы со звуковым файлом
@@ -141,7 +167,21 @@ class MSoundApp(App):
 
     def stop_all_sounds(self, instance=None):
         for sound in self.sounds:
-            sound.stop()
+            if sound:
+                sound.stop()
+
+    def remove_sound_from_sounds(self, sound):
+        sound_path = sound.filepath
+
+        self.sounds.remove(sound)
+        sound.unload()
+        del sound
+        for i,sound in enumerate(self.sounds):
+            sound.pos = i+1
+        self.change_buttons()
+        save_manager.delete_sound_by_path(sound_path)
+        
+
 
 app = MSoundApp()
 app.run()

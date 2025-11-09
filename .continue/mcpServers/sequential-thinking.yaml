@@ -1,8 +1,0 @@
-name: sequential-thinking
-version: 0.0.1
-schema: v1
-mcpServers:
-  - name: sequential-thinking
-    command: node
-    args:
-      - C:\Users\t1pe\AppData\Roaming\npm\node_modules\@modelcontextprotocol\server-sequential-thinking\dist\index.js
