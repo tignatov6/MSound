@@ -4,6 +4,7 @@ import shutil
 import os
 
 def save_sounds(sounds):
+    create_sound_dir()
     base_dir = os.path.dirname(os.path.abspath(__file__))
     for sound in sounds:
         print(str(sound))
@@ -14,6 +15,7 @@ def save_sounds(sounds):
 
 
 def load_sounds(load_dir = "sounds"):
+    create_sound_dir()
     base_dir = os.path.dirname(os.path.abspath(__file__))
     load_path = os.path.join(base_dir, load_dir)
     sounds = []
@@ -31,6 +33,7 @@ def copy_sound(src_path, dst_folder):
     Копирует файл в папку назначения, если он еще не там.
     Возвращает новый путь к файлу.
     """
+    create_sound_dir()
     base_dir = os.path.dirname(os.path.abspath(__file__))
     # Полный путь к папке назначения
     full_dst_folder_path = os.path.join(base_dir, dst_folder)
@@ -57,6 +60,7 @@ def delete_sound(sound_to_delete):
     Аргументы:
         sound_to_delete -- объект класса Sound, который нужно удалить.
     """
+    create_sound_dir()
     if not isinstance(sound_to_delete, Sound):
         print("Ошибка: в функцию delete_sound был передан неверный объект.")
         return
@@ -97,7 +101,7 @@ def delete_sound_by_path(sound_path):
     Аргументы:
         sound_to_delete -- path до звука, который нужно удалить.
     """
-    
+    create_sound_dir()
     # --- Удаление медиафайла ---
     try:
         if os.path.exists(sound_path):
@@ -123,3 +127,8 @@ def delete_sound_by_path(sound_path):
             print(f"JSON файл не найден, удаление не требуется: {json_path}")
     except OSError as e:
         print(f"Ошибка при удалении JSON файла {json_path}: {e}")
+
+def create_sound_dir():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    dir = os.path.join(base_dir, 'sounds')
+    os.makedirs(dir, exist_ok=True)
