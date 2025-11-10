@@ -7,7 +7,6 @@ from kivy.uix.boxlayout import BoxLayout
 from sound_class import Sound
 from plyer import filechooser
 from kivy.properties import ObjectProperty
-from kivy.core.window import Window
 import save_manager
 import time
 import os
@@ -60,13 +59,21 @@ class Gutton(Button):
 
 
 class MSoundApp(App):
-    sounds = []
-    sounds = save_manager.load_sounds()
+
     #print(os.listdir(SOUND_DIR))
     # for name in os.listdir(SOUND_DIR):
     #     name_without_ext, extension = os.path.splitext(name)
     #     sounds.append(Sound(name_without_ext,os.path.join(SOUND_DIR,name)))
     def build(self):
+        try:
+            from android.permissions import request_permissions, Permission
+            request_permissions([Permission.READ_EXTERNAL_STORAGE, Permission.READ_MEDIA_AUDIO])
+        except:
+            pass
+
+        self.sounds = []
+        self.sounds = save_manager.load_sounds()
+
         root = BoxLayout(orientation='vertical', padding=8, spacing=8)
         
         hl = BoxLayout(spacing=8, size_hint_y=None, height=40)
@@ -139,7 +146,7 @@ class MSoundApp(App):
                 filters=[
                     ('Все файлы', '*')
                 ],
-                multiple=True # Запрещает выбор нескольких файлов
+                multiple=True
             )
 
             if paths:
@@ -158,7 +165,7 @@ class MSoundApp(App):
                     save_manager.save_sounds(sounds=self.sounds)
                     # Здесь можно добавить логику для работы со звуковым файлом
             else:
-                self.selected_label.text = 'Выбор отменён'
+                #self.selected_label.text = 'Выбор отменён'
                 print('Файл не выбран.')
 
 
