@@ -2,6 +2,8 @@ from kivy.app import App
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
 from kivy.uix.scrollview import ScrollView
+from kivy.uix.label import Label
+from kivy.uix.popup import Popup
 from kivy.core.window import Window
 from kivy.uix.boxlayout import BoxLayout
 from sound_class import Sound
@@ -65,12 +67,7 @@ class MSoundApp(App):
     #     name_without_ext, extension = os.path.splitext(name)
     #     sounds.append(Sound(name_without_ext,os.path.join(SOUND_DIR,name)))
     def build(self):
-        try:
-            from android.permissions import request_permissions, Permission
-            request_permissions([Permission.READ_EXTERNAL_STORAGE, Permission.READ_MEDIA_AUDIO])
-        except:
-            pass
-
+        self.request_permissions()
         self.sounds = []
         self.sounds = save_manager.load_sounds()
 
@@ -95,6 +92,69 @@ class MSoundApp(App):
         self.change_buttons()
 
         return root
+    
+
+    def request_permissions(self):
+        """Запрашивает разрешения и активирует кнопку после получения"""
+        try:
+            from android.permissions import request_permissions, Permission, check_permission
+            
+            # Определяем нужные разрешения (адаптируем под версию Android)
+            perms = []
+            
+            # Для Android 13+ (API 33+)
+            if hasattr(Permission, 'READ_MEDIA_AUDIO'):
+                perms.append(Permission.READ_MEDIA_AUDIO)
+            
+            # Для старых версий Android
+            if hasattr(Permission, 'READ_EXTERNAL_STORAGE'):
+                perms.append(Permission.READ_EXTERNAL_STORAGE)
+            
+            # Разрешение на запись (чтобы Kivy мог создать .kivy директорию)
+            if hasattr(Permission, 'WRITE_EXTERNAL_STORAGE'):
+                perms.append(Permission.WRITE_EXTERNAL_STORAGE)
+            
+            print(f"Запрашиваю разрешения: {perms}")
+            
+            def callback(permissions, grants):
+                # grants = [True, True, False...] для каждого разрешения
+                if all(grants):
+                    print("✅ ВСЕ РАЗРЕШЕНИЯ ПОЛУЧЕНЫ!")
+                    #self.add_btn.disabled = False  # ⭐ Активируем кнопку
+                else:
+                    print(f"❌ Некоторые разрешения отклонены: {dict(zip(permissions, grants))}")
+                    self.show_permission_error()
+            
+            request_permissions(perms, callback)
+            
+        except ImportError:
+            # Не Android — активируем кнопку сразу
+            print("Не Android, разрешения не нужны")
+            #self.add_btn.disabled = False
+        except Exception as e:
+            print(f"💥 Ошибка при запросе разрешений: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def show_permission_error(self):
+        """Показывает попап с ошибкой разрешений"""
+        content = BoxLayout(orientation='vertical', padding=20, spacing=10)
+        content.add_widget(Label(
+            text='Необходимо предоставить разрешения\nна чтение аудиофайлов',
+            halign='center'
+        ))
+        btn = Button(text='OK', size_hint_y=None, height=40)
+        content.add_widget(btn)
+        
+        popup = Popup(
+            title='Ошибка разрешений',
+            content=content,
+            size_hint=(0.8, 0.4),
+            auto_dismiss=False
+        )
+        btn.bind(on_press=popup.dismiss)
+        popup.open()
+
 
     def create_initial_100buttons(self):
         # Use Window.width for initial creation as layout width is not set yet.
@@ -145,8 +205,20 @@ class MSoundApp(App):
             print("📂 Открываю filechooser...")
             try:
                 from android.permissions import check_permission, Permission
-                has_perm = check_permission(Permission.READ_MEDIA_AUDIO)
-                print(f"Разрешение READ_MEDIA_AUDIO: {has_perm}")
+                if hasattr(Permission, 'READ_MEDIA_AUDIO'):
+                    has_perm = check_permission(Permission.READ_MEDIA_AUDIO)
+                elif hasattr(Permission, 'READ_EXTERNAL_STORAGE'):
+                    has_perm = check_permission(Permission.READ_EXTERNAL_STORAGE)
+                else:
+                    has_perm = True
+                
+                if not has_perm:
+                    print("❌ Разрешения нет! Повторно запрашиваю...")
+                    self.request_permissions()
+                    return  # Выходим, дожидаемся следующего нажатия
+            except ImportError:
+                # Не Android — активируем кнопку сразу
+                print("Не Android, разрешения не нужны")
             except Exception as e:
                 print(f"Не удалось проверить разрешение: {e}")
                 import traceback
