@@ -86,7 +86,7 @@ class MSoundApp(App):
         self.layout.bind(minimum_height=self.layout.setter('height'))
         self.layout.bind(width=self.update_button_heights)
         
-        self.create_initial_buttons()
+        #self.create_initial_100buttons()
         
         scrollview = ScrollView(size_hint=(1, 1))
         scrollview.add_widget(self.layout)
@@ -96,7 +96,7 @@ class MSoundApp(App):
 
         return root
 
-    def create_initial_buttons(self):
+    def create_initial_100buttons(self):
         # Use Window.width for initial creation as layout width is not set yet.
         button_width = (Window.width - 5) / 2
         addsoundbtn = Button(text='add sound', background_color=[0.1, 0.7, 0, 1], size_hint_y=None, height=button_width)
@@ -141,13 +141,27 @@ class MSoundApp(App):
         """
         try:
             self.stop_all_sounds()
+
+            print("📂 Открываю filechooser...")
+            try:
+                from android.permissions import check_permission, Permission
+                has_perm = check_permission(Permission.READ_MEDIA_AUDIO)
+                print(f"Разрешение READ_MEDIA_AUDIO: {has_perm}")
+            except Exception as e:
+                print(f"Не удалось проверить разрешение: {e}")
+                import traceback
+                traceback.print_exc()
+
             paths = filechooser.open_file(
                 title='Выберите звуковой файл',
                 filters=[
                     ('Все файлы', '*')
                 ],
-                multiple=True
+                multiple=True,
+                use_cache=True
             )
+
+            print(f"📄 Результат filechooser: {paths} (тип: {type(paths)})")
 
             if paths:
                 for path in paths:
@@ -171,6 +185,8 @@ class MSoundApp(App):
 
         except Exception as e:
             print(f'Ошибка: {e}')
+            import traceback
+            traceback.print_exc()
 
     def stop_all_sounds(self, instance=None):
         for sound in self.sounds:
